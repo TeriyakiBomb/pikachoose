@@ -37,6 +37,12 @@
       "identifier": "select-same-border-radius",
       "script": "pikachoose.js",
       "handler": "selectSameBorderRadius"
+    },
+    {
+      "name": "Select by Name…",
+      "identifier": "select-by-name",
+      "script": "pikachoose.js",
+      "handler": "selectByName"
     }
   ],
   "menu": {
@@ -47,7 +53,9 @@
       "select-same-fill",
       "select-same-border-colour",
       "select-same-border-thickness",
-      "select-same-border-radius"
+      "select-same-border-radius",
+      "-",
+      "select-by-name"
     ]
   }
 }

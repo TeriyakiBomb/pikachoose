@@ -43,12 +43,11 @@ function selectMatching(context) {
   alert.addButtonWithTitle('Select')    // index 0 → returns 1000
   alert.addButtonWithTitle('Cancel')   // index 1 → returns 1001
 
-  // Custom view: 5 criteria checkboxes + 1 name-type row + 1 include-source checkbox
+  // Custom view: 4 criteria checkboxes + 1 include-source checkbox
   const W       = 310
   const ROW_H   = 22
   const STEP    = 30   // ROW_H + 8px gap
-  const VIEW_H  = STEP * 6 + ROW_H + 4  // 6 steps down + last row + padding
-  const INDENT  = 20
+  const VIEW_H  = STEP * 4 + ROW_H + 4  // 4 steps down + last row + padding
 
   const view = NSView.alloc().initWithFrame(NSMakeRect(0, 0, W, VIEW_H))
 
@@ -76,25 +75,6 @@ function selectMatching(context) {
   const cbBorder    = addCheckbox('Same border colour',    !!srcBorder)
   const cbThickness = addCheckbox('Same border thickness', false)
   const cbRadius    = addCheckbox('Same border radius',    false)
-  const cbName      = addCheckbox('Same name',             false)
-
-  // ── Name-match type row (indented, below the name checkbox) ───────────────
-  const nameY = nextY()
-
-  const lbl = NSTextField.alloc().initWithFrame(NSMakeRect(INDENT, nameY + 2, 90, ROW_H - 2))
-  lbl.setStringValue('Match type:')
-  lbl.setBezeled(false)
-  lbl.setDrawsBackground(false)
-  lbl.setEditable(false)
-  lbl.setSelectable(false)
-  view.addSubview(lbl)
-
-  const popup = NSPopUpButton.alloc().initWithFrame(NSMakeRect(INDENT + 95, nameY, 175, ROW_H))
-  popup.addItemWithTitle('Exact')
-  popup.addItemWithTitle('Contains (partial, case-insensitive)')
-  popup.addItemWithTitle('Regex (case-insensitive)')
-  view.addSubview(popup)
-
   const cbIncludeSource = addCheckbox('Include source in selection', true)
 
   alert.setAccessoryView(view)
@@ -105,16 +85,14 @@ function selectMatching(context) {
 
   // ── Read the UI state ─────────────────────────────────────────────────────
   const opts = {
-    fill:      cbFill.state()      === 1,
-    border:    cbBorder.state()    === 1,
-    thickness: cbThickness.state() === 1,
-    radius:    cbRadius.state()    === 1,
-    name:      cbName.state()      === 1,
-    nameType:       (['exact', 'contains', 'regex'])[popup.indexOfSelectedItem()] || 'exact',
-    includeSource:  cbIncludeSource.state() === 1
+    fill:          cbFill.state()      === 1,
+    border:        cbBorder.state()    === 1,
+    thickness:     cbThickness.state() === 1,
+    radius:        cbRadius.state()    === 1,
+    includeSource: cbIncludeSource.state() === 1
   }
 
-  if (!opts.fill && !opts.border && !opts.thickness && !opts.radius && !opts.name) {
+  if (!opts.fill && !opts.border && !opts.thickness && !opts.radius) {
     UI.alert('Pikachoose', 'Tick at least one matching criterion.')
     return
   }
@@ -132,7 +110,6 @@ function selectMatching(context) {
     if (opts.border    && !matchBorderColor(layer, srcBorder))     return false
     if (opts.thickness && !matchBorderThickness(layer, srcBorder)) return false
     if (opts.radius    && !matchRadius(layer, srcRadius))          return false
-    if (opts.name      && !matchName(layer.name, source.name, opts.nameType)) return false
 
     return true
   })
@@ -209,6 +186,113 @@ function quickSelect(context, criterion) {
 }
 
 
+// ─── Select by Name command ───────────────────────────────────────────────────
+
+function selectByName(context) {
+  const sketch = require('sketch')
+  const UI     = require('sketch/ui')
+
+  const doc = sketch.getSelectedDocument()
+  if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
+
+  const selection = doc.selectedLayers.layers
+  if (!selection || selection.length === 0) {
+    UI.alert('Pikachoose', 'Select at least one layer first.')
+    return
+  }
+
+  const source = selection[0]
+
+  // ── Build dialog ──────────────────────────────────────────────────────────
+  const alert = NSAlert.new()
+  alert.setMessageText('Select by Name')
+  alert.setInformativeText('Source: "' + source.name + '"')
+  alert.addButtonWithTitle('Select')
+  alert.addButtonWithTitle('Cancel')
+
+  const W      = 310
+  const ROW_H  = 22
+  const TF_H   = 26
+  const GAP    = 8
+  // Layout (AppKit y = bottom-up):
+  //   top 4px padding
+  //   text field (TF_H)
+  //   GAP
+  //   match-type row (ROW_H)
+  //   GAP
+  //   include-source checkbox at y=0 (ROW_H)
+  const VIEW_H = 4 + TF_H + GAP + ROW_H + GAP + ROW_H
+
+  const view = NSView.alloc().initWithFrame(NSMakeRect(0, 0, W, VIEW_H))
+
+  // Text field (top) — pre-populated with the source layer's name
+  const tfY = VIEW_H - 4 - TF_H
+  const tf = NSTextField.alloc().initWithFrame(NSMakeRect(0, tfY, W, TF_H))
+  tf.setStringValue(source.name)
+  tf.setPlaceholderString('Layer name…')
+  view.addSubview(tf)
+
+  // Match-type row (middle)
+  const rowY = tfY - GAP - ROW_H
+  const lbl = NSTextField.alloc().initWithFrame(NSMakeRect(0, rowY + 2, 90, ROW_H - 2))
+  lbl.setStringValue('Match type:')
+  lbl.setBezeled(false)
+  lbl.setDrawsBackground(false)
+  lbl.setEditable(false)
+  lbl.setSelectable(false)
+  view.addSubview(lbl)
+
+  const popup = NSPopUpButton.alloc().initWithFrame(NSMakeRect(95, rowY, W - 95, ROW_H))
+  popup.addItemWithTitle('Exact')
+  popup.addItemWithTitle('Contains')
+  popup.addItemWithTitle('Starts with')
+  popup.addItemWithTitle('Ends with')
+  popup.addItemWithTitle('Regex (case-insensitive)')
+  view.addSubview(popup)
+
+  // Include-source checkbox (bottom)
+  const cbInclude = NSButton.alloc().initWithFrame(NSMakeRect(0, 0, W, ROW_H))
+  cbInclude.setButtonType(3)
+  cbInclude.setTitle('Include source in selection')
+  cbInclude.setState(1)
+  view.addSubview(cbInclude)
+
+  alert.setAccessoryView(view)
+
+  const response = alert.runModal()
+  if (response !== 1000) return
+
+  const namePattern   = String(tf.stringValue())
+  const nameTypeMap   = ['exact', 'contains', 'startsWith', 'endsWith', 'regex']
+  const nameType      = nameTypeMap[popup.indexOfSelectedItem()] || 'exact'
+  const includeSource = cbInclude.state() === 1
+
+  if (!namePattern.trim()) {
+    UI.alert('Pikachoose', 'Enter a name to match against.')
+    return
+  }
+
+  const page      = doc.selectedPage
+  const sourceIds = new Set(selection.map(l => l.id))
+  const all       = sketch.find('*', page)
+
+  const matches = all.filter(layer => {
+    if (sourceIds.has(layer.id)) return false
+    return matchName(layer.name, namePattern, nameType)
+  })
+
+  const finalSelection = includeSource ? [...selection, ...matches] : matches
+
+  if (finalSelection.length === 0) {
+    UI.message('Pikachoose: no matching layers found.')
+    return
+  }
+
+  doc.selectedLayers = finalSelection
+  UI.message('Pikachoose: selected ' + finalSelection.length + ' layer' + (finalSelection.length !== 1 ? 's' : '') + '.')
+}
+
+
 // ─── Style accessors ──────────────────────────────────────────────────────────
 
 function getFirstEnabledFill(layer) {
@@ -280,6 +364,10 @@ function matchName(name, ref, type) {
       return name === ref
     case 'contains':
       return name.toLowerCase().includes(ref.toLowerCase())
+    case 'startsWith':
+      return name.toLowerCase().startsWith(ref.toLowerCase())
+    case 'endsWith':
+      return name.toLowerCase().endsWith(ref.toLowerCase())
     case 'regex':
       try { return new RegExp(ref, 'i').test(name) } catch (e) { return false }
     default:
