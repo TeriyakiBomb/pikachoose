@@ -1,0 +1,53 @@
+{
+  "name": "Pikachoose",
+  "identifier": "com.pikachoose.select-matching",
+  "description": "Select layers on the page that match properties of the current selection.",
+  "author": "Ash",
+  "version": "1.0.0",
+  "compatibleVersion": "70",
+  "disableCocoaScriptPreprocessor": true,
+  "commands": [
+    {
+      "name": "Select Matching Layers…",
+      "identifier": "select-matching",
+      "shortcut": "ctrl shift p",
+      "script": "pikachoose.js",
+      "handler": "selectMatching"
+    },
+    {
+      "name": "Select by Same Fill",
+      "identifier": "select-same-fill",
+      "script": "pikachoose.js",
+      "handler": "selectSameFill"
+    },
+    {
+      "name": "Select by Same Border Colour",
+      "identifier": "select-same-border-colour",
+      "script": "pikachoose.js",
+      "handler": "selectSameBorderColour"
+    },
+    {
+      "name": "Select by Same Border Thickness",
+      "identifier": "select-same-border-thickness",
+      "script": "pikachoose.js",
+      "handler": "selectSameBorderThickness"
+    },
+    {
+      "name": "Select by Same Border Radius",
+      "identifier": "select-same-border-radius",
+      "script": "pikachoose.js",
+      "handler": "selectSameBorderRadius"
+    }
+  ],
+  "menu": {
+    "title": "Pikachoose",
+    "items": [
+      "select-matching",
+      "-",
+      "select-same-fill",
+      "select-same-border-colour",
+      "select-same-border-thickness",
+      "select-same-border-radius"
+    ]
+  }
+}
