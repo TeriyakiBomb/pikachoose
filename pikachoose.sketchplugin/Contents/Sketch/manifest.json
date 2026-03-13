@@ -52,6 +52,18 @@
       "handler": "selectSameType"
     },
     {
+      "name": "Select by Same Opacity",
+      "identifier": "select-same-opacity",
+      "script": "pikachoose.js",
+      "handler": "selectSameOpacity"
+    },
+    {
+      "name": "Select by Same Blend Mode",
+      "identifier": "select-same-blend-mode",
+      "script": "pikachoose.js",
+      "handler": "selectSameBlendMode"
+    },
+    {
       "name": "Select by Name…",
       "identifier": "select-by-name",
       "script": "pikachoose.js",
@@ -100,6 +112,18 @@
       "handler": "selectSameTypeInFrame"
     },
     {
+      "name": "Select by Same Opacity (in Frame)",
+      "identifier": "select-same-opacity-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameOpacityInFrame"
+    },
+    {
+      "name": "Select by Same Blend Mode (in Frame)",
+      "identifier": "select-same-blend-mode-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameBlendModeInFrame"
+    },
+    {
       "name": "Select by Name in Frame…",
       "identifier": "select-by-name-in-frame",
       "script": "pikachoose.js",
@@ -118,6 +142,9 @@
       "select-same-size",
       "select-same-type",
       "-",
+      "select-same-opacity",
+      "select-same-blend-mode",
+      "-",
       "select-by-name",
       "-",
       {
@@ -131,6 +158,9 @@
           "select-same-border-radius-in-frame",
           "select-same-size-in-frame",
           "select-same-type-in-frame",
+          "-",
+          "select-same-opacity-in-frame",
+          "select-same-blend-mode-in-frame",
           "-",
           "select-by-name-in-frame"
         ]

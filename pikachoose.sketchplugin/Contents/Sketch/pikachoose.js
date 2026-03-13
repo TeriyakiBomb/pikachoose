@@ -39,6 +39,8 @@ function _selectMatching(context, frameScope) {
   const srcRadius    = getCornerRadius(source)
   const srcType      = getEffectiveType(source)
   const srcSize      = getLayerSize(source)
+  const srcOpacity   = getOpacity(source)
+  const srcBlendMode = getBlendMode(source)
 
   // Build the informative subtitle shown in the dialog
   const scopeNote = frameScope ? '   [in: ' + container.name + ']' : ''
@@ -47,6 +49,8 @@ function _selectMatching(context, frameScope) {
   if (srcBorder) details.push('Border: ' + srcBorder.color + ' ' + srcBorder.thickness + 'px')
   if (srcRadius.length > 0) details.push('Radius: ' + (new Set(srcRadius).size === 1 ? srcRadius[0] : srcRadius.join('/')) + 'px')
   details.push('Size: ' + srcSize.width + '×' + srcSize.height)
+  if (srcOpacity < 1)           details.push('Opacity: ' + Math.round(srcOpacity * 100) + '%')
+  if (srcBlendMode !== 'Normal') details.push('Blend: ' + srcBlendMode)
   const subtitle = '"' + source.name + '"' + scopeNote + '\n' + details.join('   ·   ')
 
   // ── Build the NSAlert dialog ──────────────────────────────────────────────
@@ -56,11 +60,11 @@ function _selectMatching(context, frameScope) {
   alert.addButtonWithTitle('Select')    // index 0 → returns 1000
   alert.addButtonWithTitle('Cancel')   // index 1 → returns 1001
 
-  // Custom view: 6 criteria checkboxes + 1 include-source checkbox
+  // Custom view: 8 criteria checkboxes + 1 include-source checkbox
   const W       = 310
   const ROW_H   = 22
   const STEP    = 30   // ROW_H + 8px gap
-  const VIEW_H  = STEP * 6 + ROW_H + 4  // 6 steps down + last row + padding
+  const VIEW_H  = STEP * 8 + ROW_H + 4  // 8 steps down + last row + padding
 
   const view = NSView.alloc().initWithFrame(NSMakeRect(0, 0, W, VIEW_H))
 
@@ -90,6 +94,8 @@ function _selectMatching(context, frameScope) {
   const cbRadius    = addCheckbox('Same border radius',    false)
   const cbSize      = addCheckbox('Same size (' + srcSize.width + '×' + srcSize.height + ')', false)
   const cbType      = addCheckbox('Same object type (' + srcType + ')', false)
+  const cbOpacity   = addCheckbox('Same opacity (' + Math.round(srcOpacity * 100) + '%)', false)
+  const cbBlendMode = addCheckbox('Same blend mode (' + srcBlendMode + ')', false)
   const cbIncludeSource = addCheckbox('Include source in selection', true)
 
   alert.setAccessoryView(view)
@@ -106,10 +112,12 @@ function _selectMatching(context, frameScope) {
     radius:        cbRadius.state()    === 1,
     size:          cbSize.state()      === 1,
     type:          cbType.state()      === 1,
+    opacity:       cbOpacity.state()   === 1,
+    blendMode:     cbBlendMode.state() === 1,
     includeSource: cbIncludeSource.state() === 1
   }
 
-  if (!opts.fill && !opts.border && !opts.thickness && !opts.radius && !opts.size && !opts.type) {
+  if (!opts.fill && !opts.border && !opts.thickness && !opts.radius && !opts.size && !opts.type && !opts.opacity && !opts.blendMode) {
     UI.alert('Pikachoose', 'Tick at least one matching criterion.')
     return
   }
@@ -120,7 +128,7 @@ function _selectMatching(context, frameScope) {
 
   const matches = all.filter(layer => {
     if (sourceIds.has(layer.id)) return false
-    const needsStyle = opts.fill || opts.border || opts.thickness || opts.radius
+    const needsStyle = opts.fill || opts.border || opts.thickness || opts.radius || opts.opacity || opts.blendMode
     if (needsStyle && !layer.style) return false
 
     if (opts.fill      && !matchFill(layer, srcFill))              return false
@@ -129,6 +137,8 @@ function _selectMatching(context, frameScope) {
     if (opts.radius    && !matchRadius(layer, srcRadius))          return false
     if (opts.size      && !matchSize(layer, srcSize))              return false
     if (opts.type      && !matchType(layer, srcType))              return false
+    if (opts.opacity   && !matchOpacity(layer, srcOpacity))        return false
+    if (opts.blendMode && !matchBlendMode(layer, srcBlendMode))    return false
 
     return true
   })
@@ -154,6 +164,8 @@ function selectSameBorderThickness(context) { quickSelect(context, 'thickness') 
 function selectSameBorderRadius(context)    { quickSelect(context, 'radius') }
 function selectSameSize(context)            { quickSelect(context, 'size') }
 function selectSameType(context)            { quickSelect(context, 'type') }
+function selectSameOpacity(context)         { quickSelect(context, 'opacity') }
+function selectSameBlendMode(context)       { quickSelect(context, 'blendMode') }
 
 // Frame-scoped
 function selectSameFillInFrame(context)            { quickSelect(context, 'fill',      true) }
@@ -162,6 +174,8 @@ function selectSameBorderThicknessInFrame(context) { quickSelect(context, 'thick
 function selectSameBorderRadiusInFrame(context)    { quickSelect(context, 'radius',    true) }
 function selectSameSizeInFrame(context)            { quickSelect(context, 'size',      true) }
 function selectSameTypeInFrame(context)            { quickSelect(context, 'type',      true) }
+function selectSameOpacityInFrame(context)         { quickSelect(context, 'opacity',   true) }
+function selectSameBlendModeInFrame(context)       { quickSelect(context, 'blendMode', true) }
 
 function quickSelect(context, criterion, frameScope) {
   const sketch = require('sketch')
@@ -181,6 +195,9 @@ function quickSelect(context, criterion, frameScope) {
   const srcBorder = getFirstEnabledBorder(source)
   const srcRadius = getCornerRadius(source)
   const srcType   = getEffectiveType(source)
+  const srcSize   = getLayerSize(source)
+  const srcOpacity   = getOpacity(source)
+  const srcBlendMode = getBlendMode(source)
 
   // Warn if the source doesn't have the property being matched
   if (criterion === 'fill' && !srcFill) {
@@ -202,8 +219,6 @@ function quickSelect(context, criterion, frameScope) {
   const sourceIds = new Set(selection.map(l => l.id))
   const all       = sketch.find('*', container)
 
-  const srcSize = getLayerSize(source)
-
   const matches = all.filter(layer => {
     if (sourceIds.has(layer.id)) return false
     if (criterion !== 'type' && criterion !== 'size' && !layer.style) return false
@@ -213,6 +228,8 @@ function quickSelect(context, criterion, frameScope) {
     if (criterion === 'radius'    && !matchRadius(layer, srcRadius))          return false
     if (criterion === 'size'      && !matchSize(layer, srcSize))              return false
     if (criterion === 'type'      && !matchType(layer, srcType))              return false
+    if (criterion === 'opacity'   && !matchOpacity(layer, srcOpacity))        return false
+    if (criterion === 'blendMode' && !matchBlendMode(layer, srcBlendMode))    return false
     return true
   })
 
@@ -388,6 +405,17 @@ function getLayerSize(layer) {
   }
 }
 
+// Returns opacity as a 0–1 number (defaults to 1 if not set).
+function getOpacity(layer) {
+  const o = layer.style && layer.style.opacity
+  return (typeof o === 'number') ? o : 1
+}
+
+// Returns the blending mode string (defaults to 'Normal' if not set).
+function getBlendMode(layer) {
+  return (layer.style && layer.style.blendingMode) || 'Normal'
+}
+
 // Maps Sketch layer types to human-readable labels.
 // Distinguishes Frame/Graphic from plain Group (isFrame / isGraphicFrame flags).
 // Collapses ShapePath + Shape → 'Shape', SymbolInstance + SymbolMaster → 'Symbol'.
@@ -397,6 +425,7 @@ function getEffectiveType(layer) {
     if (layer.isFrame)        return 'Frame'
     return 'Group'
   }
+  if (layer.type === 'Artboard') return 'Frame'  // canvas-level frames report as Artboard in the API
   if (layer.type === 'ShapePath' || layer.type === 'Shape') return 'Shape'
   if (layer.type === 'SymbolInstance' || layer.type === 'SymbolMaster') return 'Symbol'
   return layer.type || 'Unknown'
@@ -473,6 +502,14 @@ function matchName(name, ref, type) {
 function matchSize(layer, refSize) {
   const s = getLayerSize(layer)
   return s.width === refSize.width && s.height === refSize.height
+}
+
+function matchOpacity(layer, refOpacity) {
+  return getOpacity(layer) === refOpacity
+}
+
+function matchBlendMode(layer, refBlendMode) {
+  return getBlendMode(layer) === refBlendMode
 }
 
 function matchType(layer, refType) {
