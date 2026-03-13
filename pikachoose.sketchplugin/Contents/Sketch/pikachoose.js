@@ -169,6 +169,7 @@ function selectSameBlendMode(context)       { quickSelect(context, 'blendMode') 
 function selectSameTextStyle(context)       { quickSelect(context, 'textStyle') }
 function selectSameFont(context)            { quickSelect(context, 'font') }
 function selectSameFontSize(context)        { quickSelect(context, 'fontSize') }
+function selectSameSymbol(context)          { quickSelect(context, 'symbol') }
 
 // Frame-scoped
 function selectSameFillInFrame(context)            { quickSelect(context, 'fill',      true) }
@@ -182,6 +183,7 @@ function selectSameBlendModeInFrame(context)       { quickSelect(context, 'blend
 function selectSameTextStyleInFrame(context)       { quickSelect(context, 'textStyle', true) }
 function selectSameFontInFrame(context)            { quickSelect(context, 'font',      true) }
 function selectSameFontSizeInFrame(context)        { quickSelect(context, 'fontSize',  true) }
+function selectSameSymbolInFrame(context)          { quickSelect(context, 'symbol',    true) }
 
 function quickSelect(context, criterion, frameScope) {
   const sketch = require('sketch')
@@ -222,6 +224,10 @@ function quickSelect(context, criterion, frameScope) {
     UI.message('Pikachoose: source layer has no shared text style.')
     return
   }
+  if (criterion === 'symbol' && source.type !== 'SymbolInstance') {
+    UI.message('Pikachoose: source layer is not a Symbol instance.')
+    return
+  }
 
   const page      = doc.selectedPage
   const container = frameScope ? getContainingFrame(source) : page
@@ -233,11 +239,12 @@ function quickSelect(context, criterion, frameScope) {
   const srcTextStyleId = getTextStyleId(source)
   const srcFontFamily  = getFontFamily(source)
   const srcFontSize    = getFontSize(source)
+  const srcSymbolId    = source.symbolId || null
 
   const sourceIds = new Set(selection.map(l => l.id))
   const all       = sketch.find('*', container)
 
-  const noStyleCriteria = ['type', 'size', 'textStyle']
+  const noStyleCriteria = ['type', 'size', 'textStyle', 'symbol']
   const matches = all.filter(layer => {
     if (sourceIds.has(layer.id)) return false
     if (!noStyleCriteria.includes(criterion) && !layer.style) return false
@@ -252,6 +259,7 @@ function quickSelect(context, criterion, frameScope) {
     if (criterion === 'textStyle' && !matchTextStyle(layer, srcTextStyleId))      return false
     if (criterion === 'font'      && !matchFont(layer, srcFontFamily))            return false
     if (criterion === 'fontSize'  && !matchFontSize(layer, srcFontSize))          return false
+    if (criterion === 'symbol'    && !matchSymbol(layer, srcSymbolId))            return false
     return true
   })
 
@@ -560,6 +568,10 @@ function matchFont(layer, refFont) {
 
 function matchFontSize(layer, refFontSize) {
   return getFontSize(layer) === refFontSize
+}
+
+function matchSymbol(layer, refSymbolId) {
+  return layer.type === 'SymbolInstance' && layer.symbolId === refSymbolId
 }
 
 function matchType(layer, refType) {

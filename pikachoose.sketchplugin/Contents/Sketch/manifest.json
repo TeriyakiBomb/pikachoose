@@ -82,6 +82,12 @@
       "handler": "selectSameFontSize"
     },
     {
+      "name": "Select Same Symbol",
+      "identifier": "select-same-symbol",
+      "script": "pikachoose.js",
+      "handler": "selectSameSymbol"
+    },
+    {
       "name": "Select by Name…",
       "identifier": "select-by-name",
       "script": "pikachoose.js",
@@ -160,6 +166,12 @@
       "handler": "selectSameFontSizeInFrame"
     },
     {
+      "name": "Select Same Symbol (in Frame)",
+      "identifier": "select-same-symbol-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameSymbolInFrame"
+    },
+    {
       "name": "Select by Name in Frame…",
       "identifier": "select-by-name-in-frame",
       "script": "pikachoose.js",
@@ -185,6 +197,8 @@
       "select-same-font",
       "select-same-font-size",
       "-",
+      "select-same-symbol",
+      "-",
       "select-by-name",
       "-",
       {
@@ -205,6 +219,8 @@
           "select-same-text-style-in-frame",
           "select-same-font-in-frame",
           "select-same-font-size-in-frame",
+          "-",
+          "select-same-symbol-in-frame",
           "-",
           "select-by-name-in-frame"
         ]
