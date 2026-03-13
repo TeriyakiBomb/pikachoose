@@ -40,6 +40,12 @@
       "handler": "selectSameBorderRadius"
     },
     {
+      "name": "Select by Same Size",
+      "identifier": "select-same-size",
+      "script": "pikachoose.js",
+      "handler": "selectSameSize"
+    },
+    {
       "name": "Select by Same Object Type",
       "identifier": "select-same-type",
       "script": "pikachoose.js",
@@ -82,6 +88,12 @@
       "handler": "selectSameBorderRadiusInFrame"
     },
     {
+      "name": "Select by Same Size (in Frame)",
+      "identifier": "select-same-size-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameSizeInFrame"
+    },
+    {
       "name": "Select by Same Object Type (in Frame)",
       "identifier": "select-same-type-in-frame",
       "script": "pikachoose.js",
@@ -103,6 +115,7 @@
       "select-same-border-colour",
       "select-same-border-thickness",
       "select-same-border-radius",
+      "select-same-size",
       "select-same-type",
       "-",
       "select-by-name",
@@ -116,6 +129,7 @@
           "select-same-border-colour-in-frame",
           "select-same-border-thickness-in-frame",
           "select-same-border-radius-in-frame",
+          "select-same-size-in-frame",
           "select-same-type-in-frame",
           "-",
           "select-by-name-in-frame"
