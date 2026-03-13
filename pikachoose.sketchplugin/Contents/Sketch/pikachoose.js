@@ -391,6 +391,68 @@ function _selectByName(context, frameScope) {
 }
 
 
+// ─── Audit commands ───────────────────────────────────────────────────────────
+
+// Page-wide
+function auditHiddenLayers(context)        { auditSelect(context, 'hidden') }
+function auditEmptyGroups(context)         { auditSelect(context, 'emptyGroup') }
+function auditEmptyFrames(context)         { auditSelect(context, 'emptyFrame') }
+
+// Frame-scoped
+function auditHiddenLayersInFrame(context) { auditSelect(context, 'hidden',     true) }
+function auditEmptyGroupsInFrame(context)  { auditSelect(context, 'emptyGroup', true) }
+function auditEmptyFramesInFrame(context)  { auditSelect(context, 'emptyFrame', true) }
+
+function auditSelect(context, criterion, frameScope) {
+  const sketch = require('sketch')
+  const UI     = require('sketch/ui')
+
+  const doc = sketch.getSelectedDocument()
+  if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
+
+  const page = doc.selectedPage
+  let container = page
+
+  if (frameScope) {
+    const selection = doc.selectedLayers.layers
+    if (!selection || selection.length === 0) {
+      UI.alert('Pikachoose', 'Select a layer inside the target frame first.')
+      return
+    }
+    const frame = getContainingFrame(selection[0])
+    if (!frame) {
+      UI.message('Pikachoose: selected layer is not inside a frame.')
+      return
+    }
+    container = frame
+  }
+
+  const all = sketch.find('*', container)
+
+  const matches = all.filter(layer => {
+    if (criterion === 'hidden')     return layer.hidden === true
+    if (criterion === 'emptyGroup') return layer.type === 'Group' && !layer.isFrame && layer.layers && layer.layers.length === 0
+    if (criterion === 'emptyFrame') return (layer.isFrame || layer.type === 'Artboard') && layer.layers && layer.layers.length === 0
+    return false
+  })
+
+  const labels = {
+    hidden:     { one: 'hidden layer',  many: 'hidden layers' },
+    emptyGroup: { one: 'empty group',   many: 'empty groups' },
+    emptyFrame: { one: 'empty frame',   many: 'empty frames' }
+  }
+  const lbl = labels[criterion] || { one: 'layer', many: 'layers' }
+
+  if (matches.length === 0) {
+    UI.message('Pikachoose: no ' + lbl.many + ' found' + (frameScope ? ' in frame.' : '.'))
+    return
+  }
+
+  doc.selectedLayers = matches
+  UI.message('Pikachoose: selected ' + matches.length + ' ' + (matches.length === 1 ? lbl.one : lbl.many) + '.')
+}
+
+
 // ─── Style accessors ──────────────────────────────────────────────────────────
 
 // Walks up the parent chain and returns the nearest Frame/Graphic ancestor,

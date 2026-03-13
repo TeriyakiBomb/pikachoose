@@ -88,6 +88,24 @@
       "handler": "selectSameSymbol"
     },
     {
+      "name": "Select Hidden Layers",
+      "identifier": "audit-hidden-layers",
+      "script": "pikachoose.js",
+      "handler": "auditHiddenLayers"
+    },
+    {
+      "name": "Select Empty Groups",
+      "identifier": "audit-empty-groups",
+      "script": "pikachoose.js",
+      "handler": "auditEmptyGroups"
+    },
+    {
+      "name": "Select Empty Frames",
+      "identifier": "audit-empty-frames",
+      "script": "pikachoose.js",
+      "handler": "auditEmptyFrames"
+    },
+    {
       "name": "Select by Name…",
       "identifier": "select-by-name",
       "script": "pikachoose.js",
@@ -172,6 +190,24 @@
       "handler": "selectSameSymbolInFrame"
     },
     {
+      "name": "Select Hidden Layers (in Frame)",
+      "identifier": "audit-hidden-layers-in-frame",
+      "script": "pikachoose.js",
+      "handler": "auditHiddenLayersInFrame"
+    },
+    {
+      "name": "Select Empty Groups (in Frame)",
+      "identifier": "audit-empty-groups-in-frame",
+      "script": "pikachoose.js",
+      "handler": "auditEmptyGroupsInFrame"
+    },
+    {
+      "name": "Select Empty Frames (in Frame)",
+      "identifier": "audit-empty-frames-in-frame",
+      "script": "pikachoose.js",
+      "handler": "auditEmptyFramesInFrame"
+    },
+    {
       "name": "Select by Name in Frame…",
       "identifier": "select-by-name-in-frame",
       "script": "pikachoose.js",
@@ -202,6 +238,15 @@
       "select-by-name",
       "-",
       {
+        "title": "Audit",
+        "items": [
+          "audit-hidden-layers",
+          "audit-empty-groups",
+          "audit-empty-frames"
+        ]
+      },
+      "-",
+      {
         "title": "In Frame",
         "items": [
           "select-matching-in-frame",
@@ -222,7 +267,11 @@
           "-",
           "select-same-symbol-in-frame",
           "-",
-          "select-by-name-in-frame"
+          "select-by-name-in-frame",
+          "-",
+          "audit-hidden-layers-in-frame",
+          "audit-empty-groups-in-frame",
+          "audit-empty-frames-in-frame"
         ]
       }
     ]
