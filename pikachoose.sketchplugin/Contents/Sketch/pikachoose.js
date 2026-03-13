@@ -9,21 +9,24 @@
 const sketch = require('sketch')
 const UI     = require('sketch/ui')
 
+function getDocAndSelection() {
+  const doc = sketch.getSelectedDocument()
+  if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return null }
+  const selection = doc.selectedLayers.layers
+  if (!selection || selection.length === 0) {
+    UI.alert('Pikachoose', 'Select at least one layer first.')
+    return null
+  }
+  return { doc, selection }
+}
+
 function selectMatching(context)        { _selectMatching(context, false) }
 function selectMatchingInFrame(context) { _selectMatching(context, true) }
 
 function _selectMatching(context, frameScope) {
-  const doc = sketch.getSelectedDocument()
-  if (!doc) {
-    UI.alert('Pikachoose', 'No document is open.')
-    return
-  }
-
-  const selection = doc.selectedLayers.layers
-  if (!selection || selection.length === 0) {
-    UI.alert('Pikachoose', 'Select at least one layer first.')
-    return
-  }
+  const ds = getDocAndSelection()
+  if (!ds) return
+  const { doc, selection } = ds
 
   const source    = selection[0]
   const page      = doc.selectedPage
@@ -137,8 +140,8 @@ function _selectMatching(context, frameScope) {
     if (opts.radius    && !matchRadius(layer, srcRadius))          return false
     if (opts.size      && !matchSize(layer, srcSize))              return false
     if (opts.type      && !matchType(layer, srcType))              return false
-    if (opts.opacity   && !matchOpacity(layer, srcOpacity))        return false
-    if (opts.blendMode && !matchBlendMode(layer, srcBlendMode))    return false
+    if (opts.opacity   && getOpacity(layer) !== srcOpacity)        return false
+    if (opts.blendMode && getBlendMode(layer) !== srcBlendMode)    return false
 
     return true
   })
@@ -186,14 +189,9 @@ function selectSameFontSizeInFrame(context)        { quickSelect(context, 'fontS
 function selectSameSymbolInFrame(context)          { quickSelect(context, 'symbol',    true) }
 
 function quickSelect(context, criterion, frameScope) {
-  const doc = sketch.getSelectedDocument()
-  if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
-
-  const selection = doc.selectedLayers.layers
-  if (!selection || selection.length === 0) {
-    UI.alert('Pikachoose', 'Select at least one layer first.')
-    return
-  }
+  const ds = getDocAndSelection()
+  if (!ds) return
+  const { doc, selection } = ds
 
   const source    = selection[0]
   const srcFill   = getFirstEnabledFill(source)
@@ -217,7 +215,7 @@ function quickSelect(context, criterion, frameScope) {
     UI.message('Pikachoose: source layer is not a Text layer.')
     return
   }
-  if (criterion === 'textStyle' && !getTextStyleId(source)) {
+  if (criterion === 'textStyle' && !source.sharedStyleId) {
     UI.message('Pikachoose: source layer has no shared text style.')
     return
   }
@@ -233,7 +231,7 @@ function quickSelect(context, criterion, frameScope) {
     return
   }
 
-  const srcTextStyleId = getTextStyleId(source)
+  const srcTextStyleId = source.sharedStyleId || null
   const srcFontFamily  = getFontFamily(source)
   const srcFontSize    = getFontSize(source)
   const srcSymbolId    = source.symbolId || null
@@ -251,11 +249,11 @@ function quickSelect(context, criterion, frameScope) {
     if (criterion === 'radius'    && !matchRadius(layer, srcRadius))              return false
     if (criterion === 'size'      && !matchSize(layer, srcSize))                  return false
     if (criterion === 'type'      && !matchType(layer, srcType))                  return false
-    if (criterion === 'opacity'   && !matchOpacity(layer, srcOpacity))            return false
-    if (criterion === 'blendMode' && !matchBlendMode(layer, srcBlendMode))        return false
-    if (criterion === 'textStyle' && !matchTextStyle(layer, srcTextStyleId))      return false
-    if (criterion === 'font'      && !matchFont(layer, srcFontFamily))            return false
-    if (criterion === 'fontSize'  && !matchFontSize(layer, srcFontSize))          return false
+    if (criterion === 'opacity'   && getOpacity(layer) !== srcOpacity)            return false
+    if (criterion === 'blendMode' && getBlendMode(layer) !== srcBlendMode)        return false
+    if (criterion === 'textStyle' && (layer.sharedStyleId || null) !== srcTextStyleId) return false
+    if (criterion === 'font'      && getFontFamily(layer) !== srcFontFamily)      return false
+    if (criterion === 'fontSize'  && getFontSize(layer) !== srcFontSize)          return false
     if (criterion === 'symbol'    && !matchSymbol(layer, srcSymbolId))            return false
     return true
   })
@@ -277,14 +275,9 @@ function selectByName(context)        { _selectByName(context, false) }
 function selectByNameInFrame(context) { _selectByName(context, true) }
 
 function _selectByName(context, frameScope) {
-  const doc = sketch.getSelectedDocument()
-  if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
-
-  const selection = doc.selectedLayers.layers
-  if (!selection || selection.length === 0) {
-    UI.alert('Pikachoose', 'Select at least one layer first.')
-    return
-  }
+  const ds = getDocAndSelection()
+  if (!ds) return
+  const { doc, selection } = ds
 
   const source    = selection[0]
   const srcType   = getEffectiveType(source)
@@ -476,14 +469,9 @@ function auditSelect(context, criterion, frameScope) {
 // ─── Navigation commands ──────────────────────────────────────────────────────
 
 function selectSiblings(context) {
-  const doc = sketch.getSelectedDocument()
-  if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
-
-  const selection = doc.selectedLayers.layers
-  if (!selection || selection.length === 0) {
-    UI.alert('Pikachoose', 'Select at least one layer first.')
-    return
-  }
+  const ds = getDocAndSelection()
+  if (!ds) return
+  const { doc, selection } = ds
 
   const source = selection[0]
   const parent = source.parent
@@ -557,11 +545,6 @@ function getOpacity(layer) {
 // Returns the blending mode string (defaults to 'Normal' if not set).
 function getBlendMode(layer) {
   return (layer.style && layer.style.blendingMode) || 'Normal'
-}
-
-// Returns the shared text/layer style ID string, or null if none.
-function getTextStyleId(layer) {
-  return layer.sharedStyleId || null
 }
 
 // Returns the font family name for a Text layer, or null if unavailable.
@@ -661,26 +644,6 @@ function matchName(name, ref, type) {
 function matchSize(layer, refSize) {
   const s = getLayerSize(layer)
   return s.width === refSize.width && s.height === refSize.height
-}
-
-function matchOpacity(layer, refOpacity) {
-  return getOpacity(layer) === refOpacity
-}
-
-function matchBlendMode(layer, refBlendMode) {
-  return getBlendMode(layer) === refBlendMode
-}
-
-function matchTextStyle(layer, refStyleId) {
-  return getTextStyleId(layer) === refStyleId
-}
-
-function matchFont(layer, refFont) {
-  return getFontFamily(layer) === refFont
-}
-
-function matchFontSize(layer, refFontSize) {
-  return getFontSize(layer) === refFontSize
 }
 
 function matchSymbol(layer, refSymbolId) {
