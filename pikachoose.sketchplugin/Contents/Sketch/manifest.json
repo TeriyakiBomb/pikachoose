@@ -5,6 +5,7 @@
   "author": "Ash",
   "version": "1.0.0",
   "compatibleVersion": "70",
+  "icon": "icon.png",
   "disableCocoaScriptPreprocessor": true,
   "commands": [
     {
@@ -39,10 +40,58 @@
       "handler": "selectSameBorderRadius"
     },
     {
+      "name": "Select by Same Object Type",
+      "identifier": "select-same-type",
+      "script": "pikachoose.js",
+      "handler": "selectSameType"
+    },
+    {
       "name": "Select by Name…",
       "identifier": "select-by-name",
       "script": "pikachoose.js",
       "handler": "selectByName"
+    },
+    {
+      "name": "Select Matching Layers in Frame…",
+      "identifier": "select-matching-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectMatchingInFrame"
+    },
+    {
+      "name": "Select by Same Fill (in Frame)",
+      "identifier": "select-same-fill-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameFillInFrame"
+    },
+    {
+      "name": "Select by Same Border Colour (in Frame)",
+      "identifier": "select-same-border-colour-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameBorderColourInFrame"
+    },
+    {
+      "name": "Select by Same Border Thickness (in Frame)",
+      "identifier": "select-same-border-thickness-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameBorderThicknessInFrame"
+    },
+    {
+      "name": "Select by Same Border Radius (in Frame)",
+      "identifier": "select-same-border-radius-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameBorderRadiusInFrame"
+    },
+    {
+      "name": "Select by Same Object Type (in Frame)",
+      "identifier": "select-same-type-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameTypeInFrame"
+    },
+    {
+      "name": "Select by Name in Frame…",
+      "identifier": "select-by-name-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectByNameInFrame"
     }
   ],
   "menu": {
@@ -54,8 +103,24 @@
       "select-same-border-colour",
       "select-same-border-thickness",
       "select-same-border-radius",
+      "select-same-type",
       "-",
-      "select-by-name"
+      "select-by-name",
+      "-",
+      {
+        "title": "In Frame",
+        "items": [
+          "select-matching-in-frame",
+          "-",
+          "select-same-fill-in-frame",
+          "select-same-border-colour-in-frame",
+          "select-same-border-thickness-in-frame",
+          "select-same-border-radius-in-frame",
+          "select-same-type-in-frame",
+          "-",
+          "select-by-name-in-frame"
+        ]
+      }
     ]
   }
 }

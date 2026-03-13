@@ -6,7 +6,10 @@
 
 /* global NSAlert, NSView, NSButton, NSTextField, NSPopUpButton */
 
-function selectMatching(context) {
+function selectMatching(context)        { _selectMatching(context, false) }
+function selectMatchingInFrame(context) { _selectMatching(context, true) }
+
+function _selectMatching(context, frameScope) {
   const sketch = require('sketch')
   const UI     = require('sketch/ui')
 
@@ -22,32 +25,40 @@ function selectMatching(context) {
     return
   }
 
-  const source = selection[0]
+  const source    = selection[0]
+  const page      = doc.selectedPage
+  const container = frameScope ? getContainingFrame(source) : page
+  if (frameScope && !container) {
+    UI.message('Pikachoose: source layer is not inside a frame.')
+    return
+  }
 
   // ── Gather source properties ──────────────────────────────────────────────
   const srcFill      = getFirstEnabledFill(source)
   const srcBorder    = getFirstEnabledBorder(source)
   const srcRadius    = getCornerRadius(source)
+  const srcType      = getEffectiveType(source)
 
   // Build the informative subtitle shown in the dialog
-  const details = []
+  const scopeNote = frameScope ? '   [in: ' + container.name + ']' : ''
+  const details = ['Type: ' + srcType]
   if (srcFill)   details.push('Fill: ' + srcFill.color)
   if (srcBorder) details.push('Border: ' + srcBorder.color + ' ' + srcBorder.thickness + 'px')
   if (srcRadius.length > 0) details.push('Radius: ' + (new Set(srcRadius).size === 1 ? srcRadius[0] : srcRadius.join('/')) + 'px')
-  const subtitle = '"' + source.name + '"' + (details.length ? '\n' + details.join('   ·   ') : '')
+  const subtitle = '"' + source.name + '"' + scopeNote + '\n' + details.join('   ·   ')
 
   // ── Build the NSAlert dialog ──────────────────────────────────────────────
   const alert = NSAlert.new()
-  alert.setMessageText('Pikachoose')
+  alert.setMessageText(frameScope ? 'Pikachoose (in frame)' : 'Pikachoose')
   alert.setInformativeText(subtitle)
   alert.addButtonWithTitle('Select')    // index 0 → returns 1000
   alert.addButtonWithTitle('Cancel')   // index 1 → returns 1001
 
-  // Custom view: 4 criteria checkboxes + 1 include-source checkbox
+  // Custom view: 5 criteria checkboxes + 1 include-source checkbox
   const W       = 310
   const ROW_H   = 22
   const STEP    = 30   // ROW_H + 8px gap
-  const VIEW_H  = STEP * 4 + ROW_H + 4  // 4 steps down + last row + padding
+  const VIEW_H  = STEP * 5 + ROW_H + 4  // 5 steps down + last row + padding
 
   const view = NSView.alloc().initWithFrame(NSMakeRect(0, 0, W, VIEW_H))
 
@@ -75,6 +86,7 @@ function selectMatching(context) {
   const cbBorder    = addCheckbox('Same border colour',    !!srcBorder)
   const cbThickness = addCheckbox('Same border thickness', false)
   const cbRadius    = addCheckbox('Same border radius',    false)
+  const cbType      = addCheckbox('Same object type (' + srcType + ')', false)
   const cbIncludeSource = addCheckbox('Include source in selection', true)
 
   alert.setAccessoryView(view)
@@ -89,27 +101,29 @@ function selectMatching(context) {
     border:        cbBorder.state()    === 1,
     thickness:     cbThickness.state() === 1,
     radius:        cbRadius.state()    === 1,
+    type:          cbType.state()      === 1,
     includeSource: cbIncludeSource.state() === 1
   }
 
-  if (!opts.fill && !opts.border && !opts.thickness && !opts.radius) {
+  if (!opts.fill && !opts.border && !opts.thickness && !opts.radius && !opts.type) {
     UI.alert('Pikachoose', 'Tick at least one matching criterion.')
     return
   }
 
-  // ── Find matching layers on the current page ──────────────────────────────
-  const page      = doc.selectedPage
+  // ── Find matching layers ──────────────────────────────────────────────────
   const sourceIds = new Set(selection.map(l => l.id))
-  const all       = sketch.find('*', page)
+  const all       = sketch.find('*', container)
 
   const matches = all.filter(layer => {
-    if (sourceIds.has(layer.id)) return false   // skip the source layers themselves
-    if (!layer.style)            return false   // skip layers with no style (e.g. some groups)
+    if (sourceIds.has(layer.id)) return false
+    const needsStyle = opts.fill || opts.border || opts.thickness || opts.radius
+    if (needsStyle && !layer.style) return false
 
     if (opts.fill      && !matchFill(layer, srcFill))              return false
     if (opts.border    && !matchBorderColor(layer, srcBorder))     return false
     if (opts.thickness && !matchBorderThickness(layer, srcBorder)) return false
     if (opts.radius    && !matchRadius(layer, srcRadius))          return false
+    if (opts.type      && !matchType(layer, srcType))              return false
 
     return true
   })
@@ -117,23 +131,32 @@ function selectMatching(context) {
   const finalSelection = opts.includeSource ? [...selection, ...matches] : matches
 
   if (finalSelection.length === 0) {
-    UI.message('Pikachoose: no matching layers found.')
+    UI.message('Pikachoose: no matching ' + typeLabel(srcType, 2) + ' found.')
     return
   }
 
   doc.selectedLayers = finalSelection
-  UI.message('Pikachoose: selected ' + finalSelection.length + ' layer' + (finalSelection.length !== 1 ? 's' : '') + '.')
+  UI.message('Pikachoose: selected ' + finalSelection.length + ' ' + typeLabel(srcType, finalSelection.length) + '.')
 }
 
 
 // ─── Quick-select commands ────────────────────────────────────────────────────
 
+// Page-wide
 function selectSameFill(context)            { quickSelect(context, 'fill') }
 function selectSameBorderColour(context)    { quickSelect(context, 'border') }
 function selectSameBorderThickness(context) { quickSelect(context, 'thickness') }
 function selectSameBorderRadius(context)    { quickSelect(context, 'radius') }
+function selectSameType(context)            { quickSelect(context, 'type') }
 
-function quickSelect(context, criterion) {
+// Frame-scoped
+function selectSameFillInFrame(context)            { quickSelect(context, 'fill',      true) }
+function selectSameBorderColourInFrame(context)    { quickSelect(context, 'border',    true) }
+function selectSameBorderThicknessInFrame(context) { quickSelect(context, 'thickness', true) }
+function selectSameBorderRadiusInFrame(context)    { quickSelect(context, 'radius',    true) }
+function selectSameTypeInFrame(context)            { quickSelect(context, 'type',      true) }
+
+function quickSelect(context, criterion, frameScope) {
   const sketch = require('sketch')
   const UI     = require('sketch/ui')
 
@@ -150,6 +173,7 @@ function quickSelect(context, criterion) {
   const srcFill   = getFirstEnabledFill(source)
   const srcBorder = getFirstEnabledBorder(source)
   const srcRadius = getCornerRadius(source)
+  const srcType   = getEffectiveType(source)
 
   // Warn if the source doesn't have the property being matched
   if (criterion === 'fill' && !srcFill) {
@@ -162,16 +186,23 @@ function quickSelect(context, criterion) {
   }
 
   const page      = doc.selectedPage
+  const container = frameScope ? getContainingFrame(source) : page
+  if (frameScope && !container) {
+    UI.message('Pikachoose: source layer is not inside a frame.')
+    return
+  }
+
   const sourceIds = new Set(selection.map(l => l.id))
-  const all       = sketch.find('*', page)
+  const all       = sketch.find('*', container)
 
   const matches = all.filter(layer => {
     if (sourceIds.has(layer.id)) return false
-    if (!layer.style)            return false
+    if (criterion !== 'type' && !layer.style) return false
     if (criterion === 'fill'      && !matchFill(layer, srcFill))              return false
     if (criterion === 'border'    && !matchBorderColor(layer, srcBorder))     return false
     if (criterion === 'thickness' && !matchBorderThickness(layer, srcBorder)) return false
     if (criterion === 'radius'    && !matchRadius(layer, srcRadius))          return false
+    if (criterion === 'type'      && !matchType(layer, srcType))              return false
     return true
   })
 
@@ -179,16 +210,19 @@ function quickSelect(context, criterion) {
   doc.selectedLayers = finalSelection
 
   if (matches.length === 0) {
-    UI.message('Pikachoose: no additional matching layers found.')
+    UI.message('Pikachoose: no additional matching ' + typeLabel(srcType, 2) + ' found.')
   } else {
-    UI.message('Pikachoose: selected ' + finalSelection.length + ' layer' + (finalSelection.length !== 1 ? 's' : '') + '.')
+    UI.message('Pikachoose: selected ' + finalSelection.length + ' ' + typeLabel(srcType, finalSelection.length) + '.')
   }
 }
 
 
 // ─── Select by Name command ───────────────────────────────────────────────────
 
-function selectByName(context) {
+function selectByName(context)        { _selectByName(context, false) }
+function selectByNameInFrame(context) { _selectByName(context, true) }
+
+function _selectByName(context, frameScope) {
   const sketch = require('sketch')
   const UI     = require('sketch/ui')
 
@@ -201,11 +235,19 @@ function selectByName(context) {
     return
   }
 
-  const source = selection[0]
+  const source    = selection[0]
+  const srcType   = getEffectiveType(source)
+  const page      = doc.selectedPage
+  const container = frameScope ? getContainingFrame(source) : page
+  if (frameScope && !container) {
+    UI.message('Pikachoose: source layer is not inside a frame.')
+    return
+  }
 
   // ── Build dialog ──────────────────────────────────────────────────────────
+  const scopeNote = frameScope ? ' [in: ' + container.name + ']' : ''
   const alert = NSAlert.new()
-  alert.setMessageText('Select by Name')
+  alert.setMessageText('Select by Name' + scopeNote)
   alert.setInformativeText('Source: "' + source.name + '"')
   alert.addButtonWithTitle('Select')
   alert.addButtonWithTitle('Cancel')
@@ -272,9 +314,8 @@ function selectByName(context) {
     return
   }
 
-  const page      = doc.selectedPage
   const sourceIds = new Set(selection.map(l => l.id))
-  const all       = sketch.find('*', page)
+  const all       = sketch.find('*', container)
 
   const matches = all.filter(layer => {
     if (sourceIds.has(layer.id)) return false
@@ -284,16 +325,28 @@ function selectByName(context) {
   const finalSelection = includeSource ? [...selection, ...matches] : matches
 
   if (finalSelection.length === 0) {
-    UI.message('Pikachoose: no matching layers found.')
+    UI.message('Pikachoose: no matching ' + typeLabel(srcType, 2) + ' found.')
     return
   }
 
   doc.selectedLayers = finalSelection
-  UI.message('Pikachoose: selected ' + finalSelection.length + ' layer' + (finalSelection.length !== 1 ? 's' : '') + '.')
+  UI.message('Pikachoose: selected ' + finalSelection.length + ' ' + typeLabel(srcType, finalSelection.length) + '.')
 }
 
 
 // ─── Style accessors ──────────────────────────────────────────────────────────
+
+// Walks up the parent chain and returns the nearest Frame/Graphic ancestor,
+// or null if the layer is directly on the page with no frame container.
+function getContainingFrame(layer) {
+  let current = layer.parent
+  while (current) {
+    if (!current.type || current.type === 'Page') return null
+    if (current.isFrame) return current
+    current = current.parent
+  }
+  return null
+}
 
 function getFirstEnabledFill(layer) {
   const fills = layer.style && layer.style.fills
@@ -316,9 +369,32 @@ function getCornerRadius(layer) {
   return (corners && corners.radii) ? corners.radii : []
 }
 
+// Maps Sketch layer types to human-readable labels.
+// Distinguishes Frame/Graphic from plain Group (isFrame / isGraphicFrame flags).
+// Collapses ShapePath + Shape → 'Shape', SymbolInstance + SymbolMaster → 'Symbol'.
+function getEffectiveType(layer) {
+  if (layer.type === 'Group') {
+    if (layer.isGraphicFrame) return 'Graphic'
+    if (layer.isFrame)        return 'Frame'
+    return 'Group'
+  }
+  if (layer.type === 'ShapePath' || layer.type === 'Shape') return 'Shape'
+  if (layer.type === 'SymbolInstance' || layer.type === 'SymbolMaster') return 'Symbol'
+  return layer.type || 'Unknown'
+}
+
 function normalizeHex(color) {
   // Colors come back as '#rrggbbaa' strings; normalise to lowercase for comparison
   return color ? String(color).toLowerCase().trim() : ''
+}
+
+function typeLabel(type, count) {
+  const plurals = {
+    Shape: 'Shapes', Frame: 'Frames', Graphic: 'Graphics',
+    Group: 'Groups', Symbol: 'Symbols', Image: 'Images',
+    Text: 'Text', HotSpot: 'HotSpots', Slice: 'Slices'
+  }
+  return count === 1 ? type : (plurals[type] || type + 's')
 }
 
 
@@ -373,4 +449,8 @@ function matchName(name, ref, type) {
     default:
       return false
   }
+}
+
+function matchType(layer, refType) {
+  return getEffectiveType(layer) === refType
 }
