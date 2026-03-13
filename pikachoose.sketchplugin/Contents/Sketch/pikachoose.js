@@ -400,6 +400,31 @@ function auditEmptyFrames(context)         { auditSelect(context, 'emptyFrame') 
 function auditLockedLayers(context)        { auditSelect(context, 'locked') }
 function auditLayersOutsideFrames(context) { auditSelect(context, 'outsideFrame') }
 
+function auditUnusedSymbols(context) {
+  const sketch = require('sketch')
+  const UI     = require('sketch/ui')
+
+  const doc = sketch.getSelectedDocument()
+  if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
+
+  // Collect all symbolIds in use across the entire document
+  const allInstances = sketch.find('SymbolInstance', doc)
+  const usedIds = new Set(allInstances.map(i => i.symbolId))
+
+  // Find masters on the current page that have no instances anywhere in the doc
+  const page    = doc.selectedPage
+  const masters = sketch.find('SymbolMaster', page)
+  const unused  = masters.filter(m => !usedIds.has(m.symbolId))
+
+  if (unused.length === 0) {
+    UI.message('Pikachoose: no unused symbols found on this page.')
+    return
+  }
+
+  doc.selectedLayers = unused
+  UI.message('Pikachoose: selected ' + unused.length + ' unused symbol' + (unused.length === 1 ? '.' : 's.'))
+}
+
 // Frame-scoped
 function auditHiddenLayersInFrame(context) { auditSelect(context, 'hidden',     true) }
 function auditEmptyGroupsInFrame(context)  { auditSelect(context, 'emptyGroup', true) }

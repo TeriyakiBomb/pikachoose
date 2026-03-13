@@ -118,6 +118,12 @@
       "handler": "auditLayersOutsideFrames"
     },
     {
+      "name": "Select Unused Symbols",
+      "identifier": "audit-unused-symbols",
+      "script": "pikachoose.js",
+      "handler": "auditUnusedSymbols"
+    },
+    {
       "name": "Select Siblings",
       "identifier": "select-siblings",
       "script": "pikachoose.js",
@@ -270,7 +276,8 @@
           "audit-empty-groups",
           "audit-empty-frames",
           "audit-locked-layers",
-          "audit-outside-frames"
+          "audit-outside-frames",
+          "audit-unused-symbols"
         ]
       },
       "-",
