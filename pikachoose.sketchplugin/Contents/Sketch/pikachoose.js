@@ -6,13 +6,13 @@
 
 /* global NSAlert, NSView, NSButton, NSTextField, NSPopUpButton */
 
+const sketch = require('sketch')
+const UI     = require('sketch/ui')
+
 function selectMatching(context)        { _selectMatching(context, false) }
 function selectMatchingInFrame(context) { _selectMatching(context, true) }
 
 function _selectMatching(context, frameScope) {
-  const sketch = require('sketch')
-  const UI     = require('sketch/ui')
-
   const doc = sketch.getSelectedDocument()
   if (!doc) {
     UI.alert('Pikachoose', 'No document is open.')
@@ -186,9 +186,6 @@ function selectSameFontSizeInFrame(context)        { quickSelect(context, 'fontS
 function selectSameSymbolInFrame(context)          { quickSelect(context, 'symbol',    true) }
 
 function quickSelect(context, criterion, frameScope) {
-  const sketch = require('sketch')
-  const UI     = require('sketch/ui')
-
   const doc = sketch.getSelectedDocument()
   if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
 
@@ -280,9 +277,6 @@ function selectByName(context)        { _selectByName(context, false) }
 function selectByNameInFrame(context) { _selectByName(context, true) }
 
 function _selectByName(context, frameScope) {
-  const sketch = require('sketch')
-  const UI     = require('sketch/ui')
-
   const doc = sketch.getSelectedDocument()
   if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
 
@@ -401,9 +395,6 @@ function auditLockedLayers(context)        { auditSelect(context, 'locked') }
 function auditLayersOutsideFrames(context) { auditSelect(context, 'outsideFrame') }
 
 function auditUnusedSymbols(context) {
-  const sketch = require('sketch')
-  const UI     = require('sketch/ui')
-
   const doc = sketch.getSelectedDocument()
   if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
 
@@ -432,9 +423,6 @@ function auditEmptyFramesInFrame(context)  { auditSelect(context, 'emptyFrame', 
 function auditLockedLayersInFrame(context) { auditSelect(context, 'locked',     true) }
 
 function auditSelect(context, criterion, frameScope) {
-  const sketch = require('sketch')
-  const UI     = require('sketch/ui')
-
   const doc = sketch.getSelectedDocument()
   if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
 
@@ -488,9 +476,6 @@ function auditSelect(context, criterion, frameScope) {
 // ─── Navigation commands ──────────────────────────────────────────────────────
 
 function selectSiblings(context) {
-  const sketch = require('sketch')
-  const UI     = require('sketch/ui')
-
   const doc = sketch.getSelectedDocument()
   if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
 
