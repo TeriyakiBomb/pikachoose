@@ -64,6 +64,24 @@
       "handler": "selectSameBlendMode"
     },
     {
+      "name": "Select by Same Text Style",
+      "identifier": "select-same-text-style",
+      "script": "pikachoose.js",
+      "handler": "selectSameTextStyle"
+    },
+    {
+      "name": "Select by Same Font",
+      "identifier": "select-same-font",
+      "script": "pikachoose.js",
+      "handler": "selectSameFont"
+    },
+    {
+      "name": "Select by Same Font Size",
+      "identifier": "select-same-font-size",
+      "script": "pikachoose.js",
+      "handler": "selectSameFontSize"
+    },
+    {
       "name": "Select by Name…",
       "identifier": "select-by-name",
       "script": "pikachoose.js",
@@ -124,6 +142,24 @@
       "handler": "selectSameBlendModeInFrame"
     },
     {
+      "name": "Select by Same Text Style (in Frame)",
+      "identifier": "select-same-text-style-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameTextStyleInFrame"
+    },
+    {
+      "name": "Select by Same Font (in Frame)",
+      "identifier": "select-same-font-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameFontInFrame"
+    },
+    {
+      "name": "Select by Same Font Size (in Frame)",
+      "identifier": "select-same-font-size-in-frame",
+      "script": "pikachoose.js",
+      "handler": "selectSameFontSizeInFrame"
+    },
+    {
       "name": "Select by Name in Frame…",
       "identifier": "select-by-name-in-frame",
       "script": "pikachoose.js",
@@ -145,6 +181,10 @@
       "select-same-opacity",
       "select-same-blend-mode",
       "-",
+      "select-same-text-style",
+      "select-same-font",
+      "select-same-font-size",
+      "-",
       "select-by-name",
       "-",
       {
@@ -161,6 +201,10 @@
           "-",
           "select-same-opacity-in-frame",
           "select-same-blend-mode-in-frame",
+          "-",
+          "select-same-text-style-in-frame",
+          "select-same-font-in-frame",
+          "select-same-font-size-in-frame",
           "-",
           "select-by-name-in-frame"
         ]

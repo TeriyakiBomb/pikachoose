@@ -166,6 +166,9 @@ function selectSameSize(context)            { quickSelect(context, 'size') }
 function selectSameType(context)            { quickSelect(context, 'type') }
 function selectSameOpacity(context)         { quickSelect(context, 'opacity') }
 function selectSameBlendMode(context)       { quickSelect(context, 'blendMode') }
+function selectSameTextStyle(context)       { quickSelect(context, 'textStyle') }
+function selectSameFont(context)            { quickSelect(context, 'font') }
+function selectSameFontSize(context)        { quickSelect(context, 'fontSize') }
 
 // Frame-scoped
 function selectSameFillInFrame(context)            { quickSelect(context, 'fill',      true) }
@@ -176,6 +179,9 @@ function selectSameSizeInFrame(context)            { quickSelect(context, 'size'
 function selectSameTypeInFrame(context)            { quickSelect(context, 'type',      true) }
 function selectSameOpacityInFrame(context)         { quickSelect(context, 'opacity',   true) }
 function selectSameBlendModeInFrame(context)       { quickSelect(context, 'blendMode', true) }
+function selectSameTextStyleInFrame(context)       { quickSelect(context, 'textStyle', true) }
+function selectSameFontInFrame(context)            { quickSelect(context, 'font',      true) }
+function selectSameFontSizeInFrame(context)        { quickSelect(context, 'fontSize',  true) }
 
 function quickSelect(context, criterion, frameScope) {
   const sketch = require('sketch')
@@ -208,6 +214,14 @@ function quickSelect(context, criterion, frameScope) {
     UI.message('Pikachoose: source layer has no border.')
     return
   }
+  if ((criterion === 'textStyle' || criterion === 'font' || criterion === 'fontSize') && source.type !== 'Text') {
+    UI.message('Pikachoose: source layer is not a Text layer.')
+    return
+  }
+  if (criterion === 'textStyle' && !getTextStyleId(source)) {
+    UI.message('Pikachoose: source layer has no shared text style.')
+    return
+  }
 
   const page      = doc.selectedPage
   const container = frameScope ? getContainingFrame(source) : page
@@ -216,20 +230,28 @@ function quickSelect(context, criterion, frameScope) {
     return
   }
 
+  const srcTextStyleId = getTextStyleId(source)
+  const srcFontFamily  = getFontFamily(source)
+  const srcFontSize    = getFontSize(source)
+
   const sourceIds = new Set(selection.map(l => l.id))
   const all       = sketch.find('*', container)
 
+  const noStyleCriteria = ['type', 'size', 'textStyle']
   const matches = all.filter(layer => {
     if (sourceIds.has(layer.id)) return false
-    if (criterion !== 'type' && criterion !== 'size' && !layer.style) return false
-    if (criterion === 'fill'      && !matchFill(layer, srcFill))              return false
-    if (criterion === 'border'    && !matchBorderColor(layer, srcBorder))     return false
-    if (criterion === 'thickness' && !matchBorderThickness(layer, srcBorder)) return false
-    if (criterion === 'radius'    && !matchRadius(layer, srcRadius))          return false
-    if (criterion === 'size'      && !matchSize(layer, srcSize))              return false
-    if (criterion === 'type'      && !matchType(layer, srcType))              return false
-    if (criterion === 'opacity'   && !matchOpacity(layer, srcOpacity))        return false
-    if (criterion === 'blendMode' && !matchBlendMode(layer, srcBlendMode))    return false
+    if (!noStyleCriteria.includes(criterion) && !layer.style) return false
+    if (criterion === 'fill'      && !matchFill(layer, srcFill))                  return false
+    if (criterion === 'border'    && !matchBorderColor(layer, srcBorder))         return false
+    if (criterion === 'thickness' && !matchBorderThickness(layer, srcBorder))     return false
+    if (criterion === 'radius'    && !matchRadius(layer, srcRadius))              return false
+    if (criterion === 'size'      && !matchSize(layer, srcSize))                  return false
+    if (criterion === 'type'      && !matchType(layer, srcType))                  return false
+    if (criterion === 'opacity'   && !matchOpacity(layer, srcOpacity))            return false
+    if (criterion === 'blendMode' && !matchBlendMode(layer, srcBlendMode))        return false
+    if (criterion === 'textStyle' && !matchTextStyle(layer, srcTextStyleId))      return false
+    if (criterion === 'font'      && !matchFont(layer, srcFontFamily))            return false
+    if (criterion === 'fontSize'  && !matchFontSize(layer, srcFontSize))          return false
     return true
   })
 
@@ -416,6 +438,22 @@ function getBlendMode(layer) {
   return (layer.style && layer.style.blendingMode) || 'Normal'
 }
 
+// Returns the shared text/layer style ID string, or null if none.
+function getTextStyleId(layer) {
+  return layer.sharedStyleId || null
+}
+
+// Returns the font family name for a Text layer, or null if unavailable.
+function getFontFamily(layer) {
+  return (layer.style && layer.style.fontFamily) || null
+}
+
+// Returns the font size (number) for a Text layer, or null if unavailable.
+function getFontSize(layer) {
+  const size = layer.style && layer.style.fontSize
+  return (typeof size === 'number') ? size : null
+}
+
 // Maps Sketch layer types to human-readable labels.
 // Distinguishes Frame/Graphic from plain Group (isFrame / isGraphicFrame flags).
 // Collapses ShapePath + Shape → 'Shape', SymbolInstance + SymbolMaster → 'Symbol'.
@@ -510,6 +548,18 @@ function matchOpacity(layer, refOpacity) {
 
 function matchBlendMode(layer, refBlendMode) {
   return getBlendMode(layer) === refBlendMode
+}
+
+function matchTextStyle(layer, refStyleId) {
+  return getTextStyleId(layer) === refStyleId
+}
+
+function matchFont(layer, refFont) {
+  return getFontFamily(layer) === refFont
+}
+
+function matchFontSize(layer, refFontSize) {
+  return getFontSize(layer) === refFontSize
 }
 
 function matchType(layer, refType) {
