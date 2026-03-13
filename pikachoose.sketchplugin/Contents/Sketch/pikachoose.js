@@ -397,11 +397,14 @@ function _selectByName(context, frameScope) {
 function auditHiddenLayers(context)        { auditSelect(context, 'hidden') }
 function auditEmptyGroups(context)         { auditSelect(context, 'emptyGroup') }
 function auditEmptyFrames(context)         { auditSelect(context, 'emptyFrame') }
+function auditLockedLayers(context)        { auditSelect(context, 'locked') }
+function auditLayersOutsideFrames(context) { auditSelect(context, 'outsideFrame') }
 
 // Frame-scoped
 function auditHiddenLayersInFrame(context) { auditSelect(context, 'hidden',     true) }
 function auditEmptyGroupsInFrame(context)  { auditSelect(context, 'emptyGroup', true) }
 function auditEmptyFramesInFrame(context)  { auditSelect(context, 'emptyFrame', true) }
+function auditLockedLayersInFrame(context) { auditSelect(context, 'locked',     true) }
 
 function auditSelect(context, criterion, frameScope) {
   const sketch = require('sketch')
@@ -430,16 +433,20 @@ function auditSelect(context, criterion, frameScope) {
   const all = sketch.find('*', container)
 
   const matches = all.filter(layer => {
-    if (criterion === 'hidden')     return layer.hidden === true
-    if (criterion === 'emptyGroup') return layer.type === 'Group' && !layer.isFrame && layer.layers && layer.layers.length === 0
-    if (criterion === 'emptyFrame') return (layer.isFrame || layer.type === 'Artboard') && layer.layers && layer.layers.length === 0
+    if (criterion === 'hidden')       return layer.hidden === true
+    if (criterion === 'emptyGroup')   return layer.type === 'Group' && !layer.isFrame && layer.layers && layer.layers.length === 0
+    if (criterion === 'emptyFrame')   return (layer.isFrame || layer.type === 'Artboard') && layer.layers && layer.layers.length === 0
+    if (criterion === 'locked')       return layer.locked === true
+    if (criterion === 'outsideFrame') return layer.parent && layer.parent.type === 'Page' && !layer.isFrame && layer.type !== 'Artboard'
     return false
   })
 
   const labels = {
-    hidden:     { one: 'hidden layer',  many: 'hidden layers' },
-    emptyGroup: { one: 'empty group',   many: 'empty groups' },
-    emptyFrame: { one: 'empty frame',   many: 'empty frames' }
+    hidden:       { one: 'hidden layer',           many: 'hidden layers' },
+    emptyGroup:   { one: 'empty group',            many: 'empty groups' },
+    emptyFrame:   { one: 'empty frame',            many: 'empty frames' },
+    locked:       { one: 'locked layer',           many: 'locked layers' },
+    outsideFrame: { one: 'layer outside a frame',  many: 'layers outside frames' }
   }
   const lbl = labels[criterion] || { one: 'layer', many: 'layers' }
 
@@ -452,6 +459,40 @@ function auditSelect(context, criterion, frameScope) {
   UI.message('Pikachoose: selected ' + matches.length + ' ' + (matches.length === 1 ? lbl.one : lbl.many) + '.')
 }
 
+
+// ─── Navigation commands ──────────────────────────────────────────────────────
+
+function selectSiblings(context) {
+  const sketch = require('sketch')
+  const UI     = require('sketch/ui')
+
+  const doc = sketch.getSelectedDocument()
+  if (!doc) { UI.alert('Pikachoose', 'No document is open.'); return }
+
+  const selection = doc.selectedLayers.layers
+  if (!selection || selection.length === 0) {
+    UI.alert('Pikachoose', 'Select at least one layer first.')
+    return
+  }
+
+  const source = selection[0]
+  const parent = source.parent
+  if (!parent || !parent.layers) {
+    UI.message('Pikachoose: source layer has no siblings.')
+    return
+  }
+
+  const sourceIds = new Set(selection.map(l => l.id))
+  const siblings  = parent.layers.filter(l => !sourceIds.has(l.id))
+
+  if (siblings.length === 0) {
+    UI.message('Pikachoose: no siblings found.')
+    return
+  }
+
+  doc.selectedLayers = siblings
+  UI.message('Pikachoose: selected ' + siblings.length + ' sibling' + (siblings.length === 1 ? '.' : 's.'))
+}
 
 // ─── Style accessors ──────────────────────────────────────────────────────────
 

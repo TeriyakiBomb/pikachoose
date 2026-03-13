@@ -106,6 +106,24 @@
       "handler": "auditEmptyFrames"
     },
     {
+      "name": "Select Locked Layers",
+      "identifier": "audit-locked-layers",
+      "script": "pikachoose.js",
+      "handler": "auditLockedLayers"
+    },
+    {
+      "name": "Select Layers Outside Frames",
+      "identifier": "audit-outside-frames",
+      "script": "pikachoose.js",
+      "handler": "auditLayersOutsideFrames"
+    },
+    {
+      "name": "Select Siblings",
+      "identifier": "select-siblings",
+      "script": "pikachoose.js",
+      "handler": "selectSiblings"
+    },
+    {
       "name": "Select by Name…",
       "identifier": "select-by-name",
       "script": "pikachoose.js",
@@ -208,6 +226,12 @@
       "handler": "auditEmptyFramesInFrame"
     },
     {
+      "name": "Select Locked Layers (in Frame)",
+      "identifier": "audit-locked-layers-in-frame",
+      "script": "pikachoose.js",
+      "handler": "auditLockedLayersInFrame"
+    },
+    {
       "name": "Select by Name in Frame…",
       "identifier": "select-by-name-in-frame",
       "script": "pikachoose.js",
@@ -235,6 +259,8 @@
       "-",
       "select-same-symbol",
       "-",
+      "select-siblings",
+      "-",
       "select-by-name",
       "-",
       {
@@ -242,7 +268,9 @@
         "items": [
           "audit-hidden-layers",
           "audit-empty-groups",
-          "audit-empty-frames"
+          "audit-empty-frames",
+          "audit-locked-layers",
+          "audit-outside-frames"
         ]
       },
       "-",
@@ -271,7 +299,8 @@
           "-",
           "audit-hidden-layers-in-frame",
           "audit-empty-groups-in-frame",
-          "audit-empty-frames-in-frame"
+          "audit-empty-frames-in-frame",
+          "audit-locked-layers-in-frame"
         ]
       }
     ]
